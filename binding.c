@@ -7,11 +7,10 @@
 #define NAPI_UTF8_AUTO_LENGTH(name, val) \
   size_t name##_size = 0; \
   NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, val, NULL, 0, &name##_size)) \
-  char name[name##_size]; \
+  char name[name##_size + 1]; \
   size_t name##_len; \
   NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, val, name, name##_size + 1, &name##_len)) \
   name[name##_size] = '\0';
-
 
 NAPI_METHOD(napi_openbsd_pledge) {
   NAPI_ARGV(2);
