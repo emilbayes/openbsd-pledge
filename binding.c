@@ -1,3 +1,4 @@
+#include <string.h>
 #include <node_api.h>
 #include <assert.h>
 #include <napi-macros.h>
@@ -45,8 +46,13 @@ NAPI_METHOD(napi_openbsd_pledge) {
     }
   }
 
-  int err;
-  NAPI_UV_THROWS(err, pledge((const char*) promise_ptr, (const char*) execpromise_ptr));
+  int err = pledge((const char*) promise_ptr, (const char*) execpromise_ptr);
+  if (err < 0) {
+    napi_throw_error(env, strerror(err), strerror(err));
+    return NULL;
+  }
+
+  return NULL;
 }
 
 NAPI_INIT() {
