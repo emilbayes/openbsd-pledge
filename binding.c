@@ -5,13 +5,8 @@
 #include <napi-macros.h>
 #include <unistd.h>
 
-#define NAPI_UTF8_AUTO_LENGTH(name, val) \
-  size_t name##_size = 0; \
-  NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, val, NULL, 0, &name##_size)) \
-  char name[name##_size + 1]; \
-  size_t name##_len; \
-  NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, val, name, name##_size + 1, &name##_len)) \
-  name[name##_size] = '\0';
+#define NAPI_UTF8_GET_LENGTH(name, val) \
+  NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, val, NULL, 0, &name));
 
 const char* err_name(int status) {
   switch (status) {
@@ -22,40 +17,41 @@ const char* err_name(int status) {
   }
 }
 
+#define MAX_STR_LEN 1023
+
 NAPI_METHOD(napi_openbsd_pledge) {
   NAPI_ARGV(2);
 
-  napi_valuetype arg_type;
+  napi_valuetype arg_type = napi_undefined;
 
-  void* promise_ptr = NULL;
+  size_t promise_len = 0;
+  char promise[MAX_STR_LEN + 1];
   if (argc > 0) {
-    NAPI_STATUS_THROWS(napi_typeof(env, argv[0], &arg_type))
+    NAPI_STATUS_THROWS(napi_typeof(env, argv[0], &arg_type));
+
+    switch (arg_type) {
+      case napi_null:
+      case napi_undefined:
+      case napi_string:
+        break;
+      default:
+        napi_throw_error(env, "EINVAL", "promise must be string or null");
+        return NULL;
+    }
 
     if (arg_type == napi_string) {
-      NAPI_UTF8_AUTO_LENGTH(promise, argv[0]);
-      promise_ptr = &promise;
-    }
-    else if (arg_type != napi_null) {
-      napi_throw_error(env, "EINVAL", "Invalid argument type for promise");
-      return NULL;
+      NAPI_UTF8_GET_LENGTH(promise_len, argv[0]);
+
+      if (promise_len > MAX_STR_LEN) {
+        napi_throw_error(env, "EINVAL", "promise string too long");
+        return NULL;
+      }
+
+      NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, argv[0], promise, MAX_STR_LEN + 1, &promise_len));
     }
   }
 
-  void* execpromise_ptr = NULL;
-  if (argc > 1) {
-    NAPI_STATUS_THROWS(napi_typeof(env, argv[1], &arg_type))
-
-    if (arg_type == napi_string) {
-      NAPI_UTF8_AUTO_LENGTH(execpromise, argv[1]);
-      execpromise_ptr = &execpromise;
-    }
-    else if (arg_type != napi_null) {
-      napi_throw_error(env, "EINVAL", "Invalid argument type for promise");
-      return NULL;
-    }
-  }
-
-  int err = pledge((const char*) promise_ptr, (const char*) execpromise_ptr);
+  int err = pledge((const char*) promise, NULL);
   if (err < 0) {
     napi_throw_error(env, err_name(errno), strerror(errno));
     return NULL;
