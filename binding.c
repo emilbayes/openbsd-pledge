@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <string.h>
 #include <node_api.h>
 #include <assert.h>
@@ -11,6 +12,15 @@
   size_t name##_len; \
   NAPI_STATUS_THROWS(napi_get_value_string_utf8(env, val, name, name##_size + 1, &name##_len)) \
   name[name##_size] = '\0';
+
+const char* err_name(int status) {
+  switch (status) {
+    case EFAULT: return "EFAULT";
+    case EINVAL: return "EINVAL";
+    case EPERM: return "EPERM";
+    default: return "UNKNOWN";
+  }
+}
 
 NAPI_METHOD(napi_openbsd_pledge) {
   NAPI_ARGV(2);
@@ -47,7 +57,7 @@ NAPI_METHOD(napi_openbsd_pledge) {
 
   int err = pledge((const char*) promise_ptr, (const char*) execpromise_ptr);
   if (err < 0) {
-    napi_throw_error(env, strerror(err), strerror(err));
+    napi_throw_error(env, err_name(errno), strerror(errno));
     return NULL;
   }
 
