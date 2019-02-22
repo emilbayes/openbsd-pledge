@@ -15,6 +15,7 @@
     "tape": "^4.10.1"
   },
   "scripts": {
+    "install": "node-gyp-build",
     "dev": "node-gyp rebuild",
     "pretest": "standard",
     "test": "tape test.js"
