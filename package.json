@@ -1,6 +1,6 @@
 {
   "name": "openbsd-pledge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "OpenBSD pledge(2) bindings for Node.js with prebuilds",
   "main": "index.js",
   "publishConfig": {
