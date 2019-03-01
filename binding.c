@@ -23,8 +23,7 @@ NAPI_METHOD(napi_openbsd_pledge) {
   NAPI_ARGV(2);
 
   napi_valuetype arg_type = napi_undefined;
-
-  size_t promise_len = 0;
+  size_t promise_len = MAX_STR_LEN + 1;
   char promise[MAX_STR_LEN + 1];
   if (argc > 0) {
     NAPI_STATUS_THROWS(napi_typeof(env, argv[0], &arg_type));
@@ -51,7 +50,7 @@ NAPI_METHOD(napi_openbsd_pledge) {
     }
   }
 
-  size_t execpromise_len = 0;
+  size_t execpromise_len = MAX_STR_LEN + 1;
   char execpromise[MAX_STR_LEN + 1];
   if (argc > 1) {
     NAPI_STATUS_THROWS(napi_typeof(env, argv[1], &arg_type));
@@ -78,7 +77,7 @@ NAPI_METHOD(napi_openbsd_pledge) {
     }
   }
 
-  int err = pledge(promise_len > 0 ? promise : NULL, execpromise_len > 0 ? execpromise : NULL);
+  int err = pledge(promise_len > MAX_STR_LEN ? NULL : promise, execpromise_len > MAX_STR_LEN ? NULL : execpromise);
   if (err < 0) {
     napi_throw_error(env, err_name(errno), strerror(errno));
     return NULL;
