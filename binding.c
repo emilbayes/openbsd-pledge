@@ -1,7 +1,6 @@
 #include <errno.h>
 #include <string.h>
 #include <node_api.h>
-#include <assert.h>
 #include <napi-macros.h>
 #include <unistd.h>
 
